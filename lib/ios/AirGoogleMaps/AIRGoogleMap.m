@@ -27,6 +27,7 @@
 #ifdef HAVE_GOOGLE_MAPS_UTILS
 #import "AirClusterItem.h"
 #import "AirGMUClusterRenderer.h"
+#import "MMClusterIconGenerator.h"
 #import <Google-Maps-iOS-Utils/GMUKMLParser.h>
 #import <Google-Maps-iOS-Utils/GMUPlacemark.h>
 #import <Google-Maps-iOS-Utils/GMUPoint.h>
@@ -360,7 +361,7 @@ id regionAsJSON(MKCoordinateRegion region) {
     [UIColor colorWithRed:0.5078 green:0.8008 blue:0.4453 alpha:1],
     [UIColor colorWithRed:0.5078 green:0.8008 blue:0.4453 alpha:1],
   ];
-  id<GMUClusterIconGenerator> iconGenerator = [[GMUDefaultClusterIconGenerator alloc] initWithBuckets:@[@10, @50, @100, @200, @1000] backgroundColors:kGMUBucketBackgroundColors];
+  id<GMUClusterIconGenerator> iconGenerator = [[MMClusterIconGenerator alloc] init];
   _clusterRenderer =
       [[AirGMUClusterRenderer alloc] initWithMapView:self
                                     clusterIconGenerator:iconGenerator];

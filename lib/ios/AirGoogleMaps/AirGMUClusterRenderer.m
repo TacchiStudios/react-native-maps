@@ -397,6 +397,7 @@ static const double kGMUAnimationDuration = 0.2;  // seconds.
   CLLocationCoordinate2D initialPosition = animated ? from : position;
   marker.position = initialPosition;
   marker.userData = userData;
+  marker.title = item.identifier;
   if (clusterIcon != nil) {
     UIImageView *imageView = [[UIImageView alloc] initWithFrame:CGRectMake(0, 0, clusterIcon.size.width, clusterIcon.size.height)];
     if ([marker.userData conformsToProtocol:@protocol(GMUCluster)]) {

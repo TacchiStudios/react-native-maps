@@ -7,11 +7,19 @@ import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.content.Context;
+import android.content.res.AssetManager;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.LayerDrawable;
 import android.graphics.drawable.ShapeDrawable;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.Typeface;
+import android.widget.TextView;
+import android.widget.FrameLayout;
+import android.widget.ImageView;
+
 import android.graphics.drawable.shapes.OvalShape;
 import android.os.Build;
 import android.os.Handler;
@@ -19,9 +27,11 @@ import android.os.Looper;
 import android.os.Message;
 import android.os.MessageQueue;
 import android.util.SparseArray;
+import android.util.TypedValue;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.DecelerateInterpolator;
+import android.view.Gravity;
 
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.Projection;
@@ -54,6 +64,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.io.InputStream;
+import java.io.IOException;
 
 /**
  * The default view for a ClusterManager. Markers are animated in and out of clusters.
@@ -65,8 +77,8 @@ public class AirClusterRenderer<T extends AirClusterItem> implements ClusterRend
     private final AirIconManager mAirIconManager;
     private final float mDensity;
     private boolean mAnimate;
+    private final Context mContext;
 
-    private static final int[] BUCKETS = {10, 20, 50, 100, 200, 500, 1000};
     private ShapeDrawable mColoredCircleBackground;
 
     /**
@@ -74,11 +86,6 @@ public class AirClusterRenderer<T extends AirClusterItem> implements ClusterRend
      */
     private Set<MarkerWithPosition> mMarkers = Collections.newSetFromMap(
             new ConcurrentHashMap<MarkerWithPosition, Boolean>());
-
-    /**
-     * Icons for each bucket.
-     */
-    private SparseArray<BitmapDescriptor> mIcons = new SparseArray<BitmapDescriptor>();
 
     /**
      * Markers for single ClusterItems.
@@ -92,7 +99,7 @@ public class AirClusterRenderer<T extends AirClusterItem> implements ClusterRend
     /**
      * If cluster size is less than this size, display individual markers.
      */
-    private int mMinClusterSize = 4;
+    private int mMinClusterSize = 5;
 
     /**
      * The currently displayed set of clusters.
@@ -122,11 +129,11 @@ public class AirClusterRenderer<T extends AirClusterItem> implements ClusterRend
         mAnimate = true;
         mDensity = context.getResources().getDisplayMetrics().density;
         mIconGenerator = new IconGenerator(context);
-        mIconGenerator.setContentView(makeSquareTextView(context));
-        mIconGenerator.setTextAppearance(R.style.amu_ClusterIcon_TextAppearance);
-        mIconGenerator.setBackground(makeClusterBackground());
+        // mIconGenerator.setBackground(makeClusterBackground(context));
+        mIconGenerator.setBackground(null);
         mClusterManager = clusterManager;
         mAirIconManager = new AirIconManager(context, view, this);
+        mContext = context;
     }
 
     @Override
@@ -176,58 +183,52 @@ public class AirClusterRenderer<T extends AirClusterItem> implements ClusterRend
         mAirIconManager.loadImage(s);
     }
 
-    private LayerDrawable makeClusterBackground() {
-        mColoredCircleBackground = new ShapeDrawable(new OvalShape());
-        ShapeDrawable outline = new ShapeDrawable(new OvalShape());
-        outline.getPaint().setColor(0x80ffffff); // Transparent white.
-        LayerDrawable background = new LayerDrawable(new Drawable[]{outline, mColoredCircleBackground});
-        int strokeWidth = (int) (mDensity * 3);
-        background.setLayerInset(1, strokeWidth, strokeWidth, strokeWidth, strokeWidth);
+    private Drawable makeClusterBackground(Context context) {
+        Bitmap bitmap = getBitmapFromAsset(context, "clusterPin.png");
+
+        // Bitmap scaledBitmap = Bitmap.createScaledBitmap(bitmap, 20, 200, true);
+        BitmapDrawable background = new BitmapDrawable(context.getResources(), bitmap);
         return background;
     }
 
-    private SquareTextView makeSquareTextView(Context context) {
-        SquareTextView squareTextView = new SquareTextView(context);
-        ViewGroup.LayoutParams layoutParams = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        squareTextView.setLayoutParams(layoutParams);
-        squareTextView.setId(R.id.amu_text);
-        int twelveDpi = (int) (12 * mDensity);
-        squareTextView.setPadding(twelveDpi, twelveDpi, twelveDpi, twelveDpi);
-        return squareTextView;
+    public static Bitmap getBitmapFromAsset(Context context, String filePath) {
+        AssetManager assetManager = context.getAssets();
+
+        InputStream istr;
+        Bitmap bitmap = null;
+        try {
+            istr = assetManager.open(filePath);
+            bitmap = BitmapFactory.decodeStream(istr);
+        } catch (IOException e) {
+            // handle exception
+        }
+
+        return bitmap;
     }
 
-    protected int getColor(int clusterSize) {
-        final float hueRange = 220;
-        final float sizeRange = 300;
-        final float size = Math.min(clusterSize, sizeRange);
-        final float hue = (sizeRange - size) * (sizeRange - size) / (sizeRange * sizeRange) * hueRange;
-        return Color.HSVToColor(new float[]{
-                hue, 1f, .6f
-        });
-    }
+    private View makeTextView(Context context, int size) {
+        FrameLayout layout = new FrameLayout(mContext);
+        FrameLayout.LayoutParams layoutparams = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,ViewGroup.LayoutParams.WRAP_CONTENT);            
+        layout.setLayoutParams(layoutparams);
 
-    protected String getClusterText(int bucket) {
-        if (bucket < BUCKETS[0]) {
-            return String.valueOf(bucket);
-        }
-        return String.valueOf(bucket) + "+";
-    }
+        ImageView imageView = new ImageView(context);
+        imageView.setImageDrawable(makeClusterBackground(context));
+        layout.addView(imageView);
 
-    /**
-     * Gets the "bucket" for a particular cluster. By default, uses the number of points within the
-     * cluster, bucketed to some set points.
-     */
-    protected int getBucket(Cluster<T> cluster) {
-        int size = cluster.getSize();
-        if (size <= BUCKETS[0]) {
-            return size;
-        }
-        for (int i = 0; i < BUCKETS.length - 1; i++) {
-            if (size < BUCKETS[i + 1]) {
-                return BUCKETS[i];
-            }
-        }
-        return BUCKETS[BUCKETS.length - 1];
+        TextView textView = new TextView(context);
+        ViewGroup.LayoutParams layoutParams = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        textView.setLayoutParams(layoutParams);
+        textView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
+        textView.setTextColor(Color.WHITE);
+        textView.setGravity(Gravity.CENTER);
+        textView.setTypeface(null, Typeface.BOLD);
+        textView.setId(R.id.amu_text);
+        int paddingDpi = 12;
+        int paddingPixels = (int) (paddingDpi * mDensity);
+        textView.setPadding(paddingPixels, paddingPixels, paddingPixels, paddingPixels);
+        layout.addView(textView);
+        
+        return layout;
     }
 
     public int getMinClusterSize() {
@@ -754,14 +755,9 @@ public class AirClusterRenderer<T extends AirClusterItem> implements ClusterRend
      * The default implementation draws a circle with a rough count of the number of items.
      */
     protected void onBeforeClusterRendered(Cluster<T> cluster, MarkerOptions markerOptions) {
-        int bucket = getBucket(cluster);
-        BitmapDescriptor descriptor = mIcons.get(bucket);
-        if (descriptor == null) {
-            mColoredCircleBackground.getPaint().setColor(getColor(bucket));
-            descriptor = BitmapDescriptorFactory.fromBitmap(mIconGenerator.makeIcon(getClusterText(bucket)));
-            mIcons.put(bucket, descriptor);
-        }
-
+        int size = cluster.getSize();
+        mIconGenerator.setContentView(makeTextView(mContext, size));
+        BitmapDescriptor descriptor = BitmapDescriptorFactory.fromBitmap(mIconGenerator.makeIcon(Integer.toString(size)));
         // TODO: consider adding anchor(.5, .5) (Individual markers will overlap more often)
         markerOptions.icon(descriptor);
     }
@@ -867,14 +863,14 @@ public class AirClusterRenderer<T extends AirClusterItem> implements ClusterRend
                         } else {
                             markerOptions.position(item.getPosition());
                         }
-                        if (!(item.getTitle() == null) && !(item.getSnippet() == null)) {
-                            markerOptions.title(item.getTitle());
-                            markerOptions.snippet(item.getSnippet());
-                        } else if (!(item.getSnippet() == null)) {
-                            markerOptions.title(item.getSnippet());
-                        } else if (!(item.getTitle() == null)) {
-                            markerOptions.title(item.getTitle());
-                        }
+                        // if (!(item.getTitle() == null) && !(item.getSnippet() == null)) {
+                        //     markerOptions.title(item.getTitle());
+                        //     markerOptions.snippet(item.getSnippet());
+                        // } else if (!(item.getSnippet() == null)) {
+                        //     markerOptions.title(item.getSnippet());
+                        // } else if (!(item.getTitle() == null)) {
+                        //     markerOptions.title(item.getTitle());
+                        // }
                         onBeforeClusterItemRendered(item, markerOptions);
                         if (d != null) {
                             markerOptions.icon(d);

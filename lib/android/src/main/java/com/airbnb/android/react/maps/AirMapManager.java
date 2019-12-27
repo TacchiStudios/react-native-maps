@@ -382,8 +382,10 @@ public class AirMapManager extends ViewGroupManager<AirMapView> {
           l.add(item);
           airClusterItemMap.put(id, item);
         }
-        view.mClusterManager.addItems(l);
-        view.mClusterManager.cluster();
+        if (view.mClusterManager != null) {
+          view.mClusterManager.addItems(l);
+          view.mClusterManager.cluster();
+        }
         break;
       case REMOVE_CLUSTER_MARKER:
         String id = args.getString(0);

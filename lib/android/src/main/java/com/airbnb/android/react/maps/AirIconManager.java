@@ -122,8 +122,8 @@ public class AirIconManager {
                     drawable.draw(canvas);
                     iconBitmapDescriptor = BitmapDescriptorFactory.fromBitmap(iconBitmap);
                     uriToBitMapDescriptorMap.put(uri, iconBitmapDescriptor);
-                    if (cb != null) cb.onBitmapDescriptorReady(iconBitmapDescriptor, uri);
                 }
+                if (cb != null) cb.onBitmapDescriptorReady(iconBitmapDescriptor, uri);
             }
         }
     }

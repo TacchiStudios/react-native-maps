@@ -31,7 +31,13 @@ static NSArray<UIColor *> *kGMUBucketBackgroundColors;
 - (UIImage *)iconForSize:(NSUInteger)size {
   NSString *text;
     
-  text = [NSString stringWithFormat:@"%ld", (unsigned long)size];
+  int sizeLimit = 1000;
+
+  if (size < sizeLimit) {
+    text = [NSString stringWithFormat:@"%ld", (unsigned long)size];
+  } else {
+    text = [NSString stringWithFormat:@"%ld+", (unsigned long)sizeLimit];
+  }
 
   UIImage *image = [UIImage imageNamed:@"clusterPin"];
 
@@ -40,19 +46,20 @@ static NSArray<UIColor *> *kGMUBucketBackgroundColors;
     return icon;
   }
     
-    CGFloat scale = 1;
-    if (size > 999) {
-//        scale = 1.1; // Gets clipped. Find out why
-    } else if (size < 100 && size > 9) {
-        scale = 0.8;
-    } else if (size <= 9) {
-        scale = 0.6;
-    }
+  CGFloat scale = 1;
+  if (size >= sizeLimit) {
+    scale = 1.3;
+  } else if (size < 100 && size > 9) {
+    scale = 0.8;
+  } else if (size <= 9) {
+    scale = 0.7;
+  }
     
   UIFont *font = [UIFont boldSystemFontOfSize:15];
-  CGSize imageSize = image.size;
+  CGSize imageSize = CGSizeApplyAffineTransform(image.size, CGAffineTransformMakeScale(scale, scale));
+    
   UIGraphicsBeginImageContextWithOptions(imageSize, NO, 0.0f);
-    CGRect imageRect = CGRectMake(0, 0, imageSize.width * scale, imageSize.height * scale);
+  CGRect imageRect = CGRectMake(0, 0, imageSize.width, imageSize.height);
   [image drawInRect:imageRect];
   CGRect rect = CGRectMake(0, 0, imageRect.size.width, imageRect.size.height);
 

@@ -207,6 +207,8 @@ public class AirClusterRenderer<T extends AirClusterItem> implements ClusterRend
     }
 
     private View makeTextView(Context context, int size) {
+        int sizeLimit = 1000;
+
         FrameLayout layout = new FrameLayout(mContext);
         FrameLayout.LayoutParams layoutparams = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,ViewGroup.LayoutParams.WRAP_CONTENT);            
         layout.setLayoutParams(layoutparams);
@@ -218,7 +220,7 @@ public class AirClusterRenderer<T extends AirClusterItem> implements ClusterRend
         TextView textView = new TextView(context);
         ViewGroup.LayoutParams layoutParams = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         textView.setLayoutParams(layoutParams);
-        textView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
+        textView.setTextSize(TypedValue.COMPLEX_UNIT_SP, size >= sizeLimit ? 14 : 16);
         textView.setTextColor(Color.WHITE);
         textView.setGravity(Gravity.CENTER);
         textView.setTypeface(null, Typeface.BOLD);
@@ -757,7 +759,8 @@ public class AirClusterRenderer<T extends AirClusterItem> implements ClusterRend
     protected void onBeforeClusterRendered(Cluster<T> cluster, MarkerOptions markerOptions) {
         int size = cluster.getSize();
         mIconGenerator.setContentView(makeTextView(mContext, size));
-        BitmapDescriptor descriptor = BitmapDescriptorFactory.fromBitmap(mIconGenerator.makeIcon(Integer.toString(size)));
+        int sizeLimit = 1000;
+        BitmapDescriptor descriptor = BitmapDescriptorFactory.fromBitmap(mIconGenerator.makeIcon(size < sizeLimit ? Integer.toString(size) : sizeLimit + "+"));
         // TODO: consider adding anchor(.5, .5) (Individual markers will overlap more often)
         markerOptions.icon(descriptor);
     }

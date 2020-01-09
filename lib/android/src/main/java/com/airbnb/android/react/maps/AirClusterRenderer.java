@@ -184,11 +184,22 @@ public class AirClusterRenderer<T extends AirClusterItem> implements ClusterRend
     }
 
     private Drawable makeClusterBackground(Context context) {
-        Bitmap bitmap = getBitmapFromAsset(context, "clusterPin.png");
+        // try {
+        //     // This will work in release mode. The catch will allow it to work in debug mode too.
+        //     int id = context.getResources().getIdentifier("src_assets_mappins_clusterpin", "drawable", context.getPackageName());
+        //     return context.getResources().getDrawable(id);
+        // } catch(Exception e) {
+        //     Bitmap bitmap = getBitmapFromAsset(context, "clusterPin.png");
 
-        // Bitmap scaledBitmap = Bitmap.createScaledBitmap(bitmap, 20, 200, true);
-        BitmapDrawable background = new BitmapDrawable(context.getResources(), bitmap);
-        return background;
+        //     // Bitmap scaledBitmap = Bitmap.createScaledBitmap(bitmap, 20, 200, true);
+        //     BitmapDrawable background = new BitmapDrawable(context.getResources(), bitmap);
+        //     return background;
+        // }
+
+        // This requires the file to be in the RN project's drawable folders.
+        // TODO: make configurable via the MapView component's props.
+        int id = context.getResources().getIdentifier("cluster_pin", "drawable", context.getPackageName());
+        return context.getResources().getDrawable(id);
     }
 
     public static Bitmap getBitmapFromAsset(Context context, String filePath) {
